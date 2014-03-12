@@ -1,0 +1,14 @@
+Minimal example for SIB Workshop on "Reproducible Research"
+-----------------------------------------------------------
+The provided directory contains the files:
+- ex_report_latex.Rnw : knitr file you have to process with the 
+  function knit2pdf() from the R package knitr 
+- ex_report_markdown.Rmd : knitr file you have to process with the 
+  function knit2html() from the R package knitr and with pandoc
+- final_report_latex.pdf : this is what your processed pdf file 
+  (ex_report_latex.pdf) should look like
+- final_report_markdown.html : this is what your processed html file 
+  (ex_report_markdown.html) should look like
+- my_R_function.R : R file sourced in reports
+- sib_logo.pdf : SIB logo used in LaTeX template
+- .gitignore : patterns for some files we do not wish to track with Git

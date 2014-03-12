@@ -1,0 +1,212 @@
+%% File : ex_report_latex.Rnw
+%%
+%% Desc : minimal (LaTeX) knitr example for reproducible research WS
+%% Auth : Sarah Gerster
+%% Date : 11 Mar 2014
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% THE SOURCE OF THIS DOCUMENT IS *.Rnw
+%%% DO NOT EDIT THE *.tex or .R FILES !!!
+
+\documentclass[a4paper,11pt,oneside]{article}
+
+%% Change to adapt title/heading information
+\def \myTitle {Sample \LaTeX\ knitr report} 
+\def \myShortTitle {reproducible research workshop}
+\def \myAuthorInfo {\textsf{Sarah Gerster
+    (}\texttt{sarah.gerster@isb-sib.ch}\textsf{)}\\\textsf{Fr\'ed\'eric Sch\"utz
+    (}\texttt{frederic.schutz@isb-sib.ch}\textsf{)}\\\textsf{Bioinformatics
+    Core Facility}\\\textsf{SIB Swiss Institute of
+    Bioinformatics}\\\textsf{Lausanne, Switzerland}} 
+
+\def \myDate{March 11, 2014}
+\date{\myDate}
+
+%% Change to add/remove LaTeX packages
+\usepackage{graphicx}
+\usepackage{amsmath, amsthm, amssymb, amsfonts, mathrsfs}
+\usepackage[mathscr]{eucal}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{rotfloat}
+\newcommand{\subfloat}[2][need a sub-caption]{\subcaptionbox{#1}{#2}}
+
+%% Change the line spacing
+\renewcommand{\baselinestretch}{1}
+%% Change the margins
+\usepackage[margin=1in]{geometry}
+
+%% Set headers and footers for report
+\let\footruleskip\relax
+\usepackage{fancyhdr}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+%\pagestyle{ruled}
+\fancyhead[C]{\begin{minipage}[c][7mm][c]{10mm}\includegraphics[width=\linewidth]{sib_logo.pdf}\\[0.2ex]\end{minipage}}
+\fancyhead[L]{\textsf{Bioinformatics Core Facility\\Swiss Institute of Bioinformatics}}
+\fancyhead[R]{\textsf{\myShortTitle\\\myDate}}
+\fancyfoot{}
+\fancyfoot[L]{\textsf{Technical Report BCF-SIB}}
+\fancyfoot[R]{\textsf{\thepage}}
+\pagestyle{fancyplain}
+
+%% Define new commands
+\newcommand*{\Rp}{\textsf{R}$\;$}% R program
+\newsavebox\ltmcbox
+
+%% Set default R options
+<<repadd1_setup, include = FALSE>>=
+require(knitr)
+opts_chunk$set(fig.path = "figures/", fig.align = "center",
+               fig.show = "hold", tidy = FALSE, echo = FALSE)
+options(width = 80)
+@ 
+
+<<ex1_settings, echo = FALSE, results = "hide">>=
+## ################ ##
+## GENERAL SETTINGS ##
+## ################ ##
+### version of R objects savec in files
+version <- "2014-03-11"
+### working directory
+setwd(".")
+### where to save figures 
+plotdir <- "figures/"
+@ 
+
+\graphicspath{{\Sexpr{plotdir}}}
+\DeclareGraphicsExtensions{.pdf,.eps,.png}
+\DeclareGraphicsRule{*}{pdf}{*}{}
+
+<<ex1_setup, results = "hide", message = FALSE, warning = FALSE>>=
+## ########################### ##
+## LOAD PACKAGES, SOURCE CODES ##
+## ########################### ##
+require(ggplot2)
+require(xtable)
+source("my_R_function.R")
+
+sanitizeUnderscoreSexpr <- function(str) {
+    gsub('_', '\\\\\\\\_', str);
+}
+sanitizeUnderscores <- function(text) {
+  return(gsub("_", "\\\\_", text))
+}
+@ 
+
+%% %%%%%%%%%%%%%%%%%%%%% %%
+%% Begin actual document %%
+%% %%%%%%%%%%%%%%%%%%%%% %%
+\begin{document}
+\title{\myTitle}
+\author{\myAuthorInfo}
+\maketitle
+
+\section{Welcome to the workshop}
+\texttt{knitr} allows you to combine your data analysis and reporting
+in a single document. You can choose how much \Rp code will actually
+be displayed in the generated report. In any case, if needed, you will
+always be able to easily access all code used to generate the output
+presented in your report. This goes in the direction of literate
+programming:
+
+\begin{quote} I believe that the time is ripe for significantly better
+documentation of programs, and that we can best achieve this by
+considering programs to be works of literature.\\-- Knuth (1992)
+\end{quote}
+
+In this sample report, we just want to check that your system is set
+up properly to participate in the workshop. Please make sure you
+manage to compile this report and that the resulting PDF looks like
+the provided reference PDF.
+
+\section{Generating some data and making plots} 
+We will simulate some meaningless data to have some values to plot and
+represent in tables. The code to simulate the data is shown below:
+
+<<ex1_simdata, echo = TRUE, results = "hide">>=
+set.seed(42) # for reproducibility
+## simulated values of two genes for samples from different batches
+gene1_b1 <- sort(abs(rnorm(30, mean = 2, sd = 1)))
+gene1_b1_groups <- rep(c("control", "case"), times = c(11, 19))
+gene1_b2 <- sort(abs(rnorm(20, mean = 4, sd = 0.5)))
+gene1_b2_groups <- rep(c("control", "case"), times = c(12, 8))
+
+## put the simulated data in a data frame
+orig_df <-
+    data.frame(by = as.factor(rep(c("batch 1", "batch 2"), times = c(30, 20))),
+               vals = c(gene1_b1, gene1_b2),
+               cat = as.factor(c(gene1_b1_groups, gene1_b2_groups)))
+@ 
+
+
+Assume these values are measured intensities for a specific gene
+extracted from a larger experiment. The samples were processed in two
+batches. We call a customized plotting function to get a first
+idea of what the data look like (code not shown in the report).
+
+<<ex1_plot1, fig.cap = "A first figure", fig.height = 4, out.width = "0.5\\textwidth", fig.pos = "H">>=
+print(my_R_function(df = orig_df, y_lab = "log2(expression)", 
+                    title = "original data"))
+@ 
+
+There seems to be a batch effect which we would like to remove with a
+simple $z$-transform:
+<<ex1_ztransf, echo = TRUE, results = "hide">>=
+norm_df <-
+    data.frame(by = as.factor(rep(c("batch 1", "batch 2"), times = c(30, 20))),
+               vals = c(scale(gene1_b1), scale(gene1_b2)),
+               cat = as.factor(c(gene1_b1_groups, gene1_b2_groups)))
+@ 
+
+To see the effect of our batch effect removal step, we want to plot
+both, the original and the corrected data next to each other (code not
+shown in the report):
+<<ex1_plot2, fig.cap = "A second figure", fig.subcap = c("original data", "adjusted data"), fig.height = 4, out.width = "0.45\\textwidth", fig.pos = "H">>=
+## plot original data
+print(my_R_function(df = orig_df, y_lab = "log2(intensity)", 
+                    y_lim = c(-2.5, 5)))
+## plot modified data
+print(my_R_function(df = norm_df, y_lab = "adjusted log2(intensity)", 
+                    y_lim = c(-2.5, 5)))
+@ 
+
+We can use expressions of the form \verb+\Sexpr{}+ to use \Rp code
+inline. For example, in \autoref{fig:ex1_plot2} we see that the
+$z$-transformation brings the 
+\Sexpr{sum(orig_df[, "by"] == "batch 1")} samples from batch 1 on 
+the same scale as the \Sexpr{sum(orig_df[, "by"] == "batch 2")} 
+samples from batch 2. The sample counts in the previous sentence are 
+obtained with inline \Rp statements such as
+\verb+\+\verb+Sexpr{sum(orig_df[, "by"] == "batch 1")}+.
+
+\subsection{Let's add a table of values}
+The \Rp package \texttt{xtable} is of great help to nicely display
+data frames as tables in a report. As an example, we present the
+sample counts per batch and per category in a table using the
+following code:
+<<ex1_table, echo = TRUE, results = "asis">>=
+print(xtable(table(orig_df[, c("by", "cat")]), caption = "A table."))
+@ 
+
+\section{Information about the \Rp session}
+It is always a good idea to include information about the \Rp session
+(version of \Rp and used packages) in which the current report was
+generated:
+
+<<ex1_rsession, echo = TRUE, results = "asis">>=
+print(toLatex(sessionInfo(), locale = FALSE))
+@ 
+
+\section{End of sample file}
+That was it. If you produce the PDF of this report on your laptop, you
+should get a document that looks very similar to the file
+\texttt{final\_report\_latex.pdf} in the GitHub repository. If this is
+not the case, you have to fix the problems (e.g.\ install missing
+software) before the workshop in order to be able to fully
+participate.
+
+\end{document}

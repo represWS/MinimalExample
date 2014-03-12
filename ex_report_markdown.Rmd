@@ -1,0 +1,151 @@
+# Sample Markdown report for the workshop on reproducible research 
+### Sarah Gerster (sarah.gerster@isb-sib.ch) and Frédéric Schütz (frederic.schutz@isb-sib.ch)
+### Bioinformatics Core Facility, SIB Swiss Institute of Bioinformatics, Lausanne, Switzerland
+### March 12, 2014
+<!--% `r date()`-->
+
+<!--
+File : ex_report_markdown.Rmd
+Desc : minimal (Markdown) knitr example for reproducible research WS
+Auth : Sarah Gerster
+Date : 11 Mar 2014
+
+THE SOURCE OF THIS DOCUMENT IS *.Rmd
+DO NOT EDIT THE *.md, *.html, *.doc, *.pdf, *.R, ... FILES !!!
+-->
+
+ 
+<!-- Setting up R -->
+```{r ex2_setup, echo = FALSE, results = "hide", message = FALSE, warning = FALSE} 
+## ##### ##
+## KNITR ##
+## ##### ##
+opts_chunk$set(fig.path = "figures/", fig.align = "center",
+               fig.show = "hold", tidy = FALSE, echo = FALSE)
+options(keep.blank.line = TRUE, width.cutoff = 60, keep.source = TRUE)
+
+
+## ################ ##
+## GENERAL SETTINGS ##
+## ################ ##
+### version of R objects savec in files
+version <- "2014-03-11"
+### working directory
+setwd(".")
+### where to save figures 
+plotdir <- "figures/"
+
+## ########################### ##
+## LOAD PACKAGES, SOURCE CODES ##
+## ########################### ##
+require(ggplot2)
+require(gridExtra)
+require(xtable)
+source("my_R_function.R")
+```
+
+## Welcome to the workshop
+**knitr** allows you to combine your data analysis and reporting
+in a single document. You can choose how much R code will actually
+be displayed in the generated report. In any case, if needed, you will
+always be able to easily access all code used to generate the output
+presented in your report. This goes in the direction of literate
+programming:
+
+> I believe that the time is ripe for significantly better
+documentation of programs, and that we can best achieve this by
+considering programs to be works of literature.   
+Knuth (1992)
+
+In this sample report, we just want to check that your system is set
+up properly to participate in the workshop. Please make sure you
+manage to compile this report and that the resulting HTML file looks
+like the provided reference HTML file.
+
+## Generating some data and making plots 
+We will simulate some meaningless data to have some values to plot and
+represent in tables. The code to simulate the data is shown below:
+
+```{r ex2_simdata, echo = TRUE, results = "hide"}
+set.seed(42) # for reproducibility
+## simulated values of two genes for samples from different batches
+gene1_b1 <- sort(abs(rnorm(30, mean = 2, sd = 1)))
+gene1_b1_groups <- rep(c("control", "case"), times = c(11, 19))
+gene1_b2 <- sort(abs(rnorm(20, mean = 4, sd = 0.5)))
+gene1_b2_groups <- rep(c("control", "case"), times = c(12, 8))
+
+## put the simulated data in a data frame
+orig_df <-
+    data.frame(by = as.factor(rep(c("batch 1", "batch 2"), 
+                                  times = c(30, 20))),
+               vals = c(gene1_b1, gene1_b2),
+               cat = as.factor(c(gene1_b1_groups, gene1_b2_groups)))
+``` 
+
+
+Assume these values are measured intensities for a specific gene
+extracted from a larger experiment. The samples were processed in two
+batches. We call a customized plotting function to get a first
+idea of what the data look like (code not shown in the report).
+
+```{r ex2_plot1, fig.height = 4}
+my_R_function(df = orig_df, y_lab = "log2(expression)", 
+              title = "original data")
+``` 
+
+There seems to be a batch effect which we would like to remove with a
+simple $z$-transform:
+```{r ex2_ztransf, echo = TRUE, results = "hide"}
+norm_df <-
+    data.frame(by = as.factor(rep(c("batch 1", "batch 2"), 
+                                  times = c(30, 20))),
+               vals = c(scale(gene1_b1), scale(gene1_b2)),
+               cat = as.factor(c(gene1_b1_groups, gene1_b2_groups)))
+``` 
+
+To see the effect of our batch effect removal step, we want to plot
+both, the original and the corrected data next to each other (code not
+shown in the report):
+```{r ex2_plot2, fig.height = 4, fig.width = 12, out.width = "750px"}
+## plot original data
+plot1 <- my_R_function(df = orig_df, y_lab = "log2(intensity)", 
+                       y_lim = c(-2.5, 5),  title = "original data")
+## plot modified data
+plot2 <- my_R_function(df = norm_df, y_lab = "adjusted log2(intensity)", 
+                       y_lim = c(-2.5, 5),  title = "adjusted data")
+grid.arrange(plot1, plot2, ncol=2)   
+``` 
+
+We can use expressions of the form `` `r ` `` to use R code inline. For
+example, we see that the $z$-transformation
+brings the `r sum(orig_df[, "by"] == "batch 1")` samples from
+batch 1 on the same scale as the `r sum(orig_df[, "by"] == "batch 2")` 
+samples from batch 2. The sample counts in the previous
+sentence are obtained with inline R statements such as
+`` ` ```` r sum(orig_df[, "by"] == "batch 1")` ``.
+
+### Let's add a table of values
+The R package *xtable* is of great help to nicely display
+data frames as tables in a report. As an example, we present the
+sample counts per batch and per category in a table using the
+following code:
+```{r ex2_table, echo = TRUE, results = "asis"}
+print(xtable(table(orig_df[, c("by", "cat")]), align = "lcc"), type = "html")
+``` 
+
+## Information about the R session
+It is always a good idea to include information about the R session
+(version of R and used packages) in which the current report was
+generated:
+
+```{r ex2_rsession, echo = TRUE}
+print(sessionInfo(), locale = FALSE)
+``` 
+
+## End of sample file
+That was it. If you produce the HTML of this report on your laptop, you
+should get a document that looks very similar to the file
+*final_report_markdown.html* in the GitHub repository. If this is
+not the case, you have to fix the problems (e.g. install missing
+software) before the workshop in order to be able to fully
+participate.
